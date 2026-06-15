@@ -247,7 +247,7 @@ const tr=s=>(s||'').trim();
 const dp=n=>n.trim().split(/\s+/)[0].toLowerCase();
 
 let members=[],SES={on:false,uid:null,name:'',isAdmin:false};
-let curId=null,editId=null,fTxt='',fTab='all',activeMain='mine',tPic=null,myChart=null;
+let curId=null,editId=null,fTxt='',fTab='all',fSort='alpha',activeMain='mine',tPic=null,myChart=null;
 const mob=()=>window.innerWidth<860;
 
 // ── TOAST ──────────────────────────────────────────────────
@@ -467,6 +467,16 @@ function renderMyProfile(){
 function doFilter(v){fTxt=v.toLowerCase();renderList();}
 function switchTab(t,el){fTab=t;document.querySelectorAll('.stab').forEach(function(x){x.classList.remove('on');});el.classList.add('on');renderList();}
 
+function setSort(s){
+  fSort=s;
+  ['alpha','latest','pending'].forEach(function(k){
+    var b=document.getElementById('sort-'+k);
+    if(!b)return;
+    if(k===s){b.style.background='var(--M)';b.style.color='#fff';b.style.borderColor='var(--M)';}
+    else{b.style.background='var(--BG)';b.style.color='var(--B3)';b.style.borderColor='var(--BD2)';}
+  });
+  renderList();
+}
 function renderList(){
   var ms=members.filter(function(m){
     var hit=m.name.toLowerCase().includes(fTxt)||(m.children||[]).some(function(c){
@@ -477,6 +487,23 @@ function renderList(){
     if(fTab==='pending')return !filled;
     return true;
   });
+  // Sort
+  if(fSort==='alpha'){
+    ms=ms.slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+  } else if(fSort==='latest'){
+    ms=ms.slice().sort(function(a,b){
+      var da=a.updatedAt?new Date(a.updatedAt):new Date(0);
+      var db=b.updatedAt?new Date(b.updatedAt):new Date(0);
+      return db-da;
+    });
+  } else if(fSort==='pending'){
+    ms=ms.slice().sort(function(a,b){
+      var fa=(a.children||[]).some(function(c){return c.name||c.classGrade;})||a.email||a.phone;
+      var fb=(b.children||[]).some(function(c){return c.name||c.classGrade;})||b.email||b.phone;
+      if(fa===fb)return a.name.localeCompare(b.name);
+      return fa?1:-1; // pending first
+    });
+  }
   var el=document.getElementById('mlist');
   if(!ms.length){el.innerHTML='<div class="empty"><div class="ei">&#x1F50D;</div><h3>No matches</h3></div>';return;}
   el.innerHTML=ms.map(function(m){
