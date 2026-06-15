@@ -174,6 +174,18 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sa
 .empty{text-align:center;padding:40px 20px;color:var(--B3)}.empty .ei{font-size:42px;margin-bottom:10px}.empty h3{font-size:15px;font-weight:700;color:var(--B2);margin-bottom:5px}.empty p{font-size:13px;line-height:1.6}
 .footer{text-align:center;padding:16px 14px 30px;font-size:11px;color:var(--B3);border-top:1px solid var(--BD);line-height:1.9}.footer strong{color:var(--M)}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--BD2);border-radius:2px}
+.kd-card{background:var(--W);border:1.5px solid var(--BD);border-radius:var(--R);padding:12px;cursor:pointer;transition:border-color .15s;position:relative;border-top:3px solid var(--M)}
+.kd-card:hover{border-color:var(--M);box-shadow:0 3px 12px rgba(123,31,46,.12)}
+.kd-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;margin-bottom:8px}
+.kd-name{font-size:13px;font-weight:700;color:var(--B);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kd-parent{font-size:10px;color:var(--B3);margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kd-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-bottom:6px}
+.kd-row{font-size:11px;color:var(--B2);padding:3px 0;border-bottom:1px solid var(--BD);display:flex;gap:6px}
+.kd-row:last-child{border:none}
+.kd-row span:first-child{color:var(--B3);flex-shrink:0;min-width:55px}
+.kd-row span:last-child{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kpill{padding:4px 11px;border-radius:14px;border:1.5px solid var(--BD2);background:var(--BG);color:var(--B3);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit}
+.kpill.on{border-color:var(--M);background:var(--M);color:#fff}
 </style>
 </head>
 <body>
@@ -210,8 +222,31 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sa
 <div id="admin-bar" class="admin-bar sbar" style="display:none">&#x2B50; Admin Mode &mdash; Full access enabled</div>
 <div id="gs-bar" class="sbar grn" style="display:flex">&#x2601; Connected to Google Sheet &mdash; Sheet is the only source of truth</div>
 <div id="st-bar" class="sbar" style="display:none"></div>
-<div class="main-tabs"><button class="main-tab" id="tab-mine" onclick="switchMain('mine')">&#x1F464; My Profile</button><button class="main-tab" id="tab-all" onclick="switchMain('all')">&#x1F465; All Members</button></div>
+<div class="main-tabs"><button class="main-tab" id="tab-mine" onclick="switchMain('mine')">&#x1F464; My Profile</button><button class="main-tab" id="tab-all" onclick="switchMain('all')">&#x1F465; All Members</button><button class="main-tab" id="tab-kids" onclick="switchMain('kids')">&#x1F476; Kids</button></div>
 <div id="pane-mine"><div class="mine-wrap" id="mine-content"></div></div>
+<div id="pane-kids" style="display:none;flex-direction:column;height:calc(100vh - 270px)">
+  <div style="padding:10px 13px;background:var(--W);border-bottom:1px solid var(--BD);display:flex;flex-direction:column;gap:7px;position:sticky;top:0;z-index:50">
+    <div class="sbox"><span style="font-size:16px;color:var(--B3)">&#x1F50D;</span>
+      <input type="text" id="k-srch" placeholder="Search child name, institution, stream..." oninput="kFilter()" style="flex:1;border:none;background:transparent;font-size:14px;color:var(--B);outline:none;font-family:inherit">
+    </div>
+    <div id="k-pills" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+    <div style="display:flex;gap:5px;align-items:center">
+      <span style="font-size:10px;color:var(--B3);flex-shrink:0">Sort:</span>
+      <button id="ks-name" onclick="kSort('name')" style="padding:3px 9px;border-radius:10px;border:1.5px solid var(--M);background:var(--M);color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">Name</button>
+      <button id="ks-age" onclick="kSort('age')" style="padding:3px 9px;border-radius:10px;border:1.5px solid var(--BD2);background:var(--BG);color:var(--B3);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">Age</button>
+      <button id="ks-parent" onclick="kSort('parent')" style="padding:3px 9px;border-radius:10px;border:1.5px solid var(--BD2);background:var(--BG);color:var(--B3);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">Parent</button>
+      <span id="k-count" style="margin-left:auto;font-size:11px;color:var(--B3)"></span>
+    </div>
+  </div>
+  <div id="k-grid" style="overflow-y:auto;padding:10px 11px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:9px;flex:1"></div>
+</div>
+
+<!-- Kids detail modal -->
+<div class="overlay" id="kid-modal">
+<div class="modal" style="max-width:460px">
+  <div class="mhdr"><div><div class="mhan"></div><div class="mttl" id="kid-ttl">Child Details</div></div><button class="mcls" onclick="cM('kid-modal')">&#x2715;</button></div>
+  <div class="mbody" id="kid-body"></div>
+</div></div>
 <div id="pane-all" style="display:flex;flex-direction:column;height:calc(100vh - 270px)">
 <div class="swrap"><div class="sbox"><span style="font-size:16px;color:var(--B3)">&#x1F50D;</span><input type="text" id="srch" placeholder="Search members, children, institutions..." oninput="doFilter(this.value)"></div></div>
 <div class="stabs"><button class="stab on" onclick="switchTab('all',this)">All Members</button><button class="stab" onclick="switchTab('filled',this)">Filled &#x2713;</button><button class="stab" onclick="switchTab('pending',this)">Pending</button></div>
@@ -280,10 +315,26 @@ function saveCache(){
   var toSave=members.map(function(m){var r=Object.assign({},m);delete r.photo;delete r.banner;return r;});
   localStorage.setItem(VER,JSON.stringify(toSave));
 }
+function coerceMember(m){
+  m.phone=(m.phone||'').toString();
+  m.email=(m.email||'').toString();
+  m.pin=(m.pin||'').toString();
+  m.notes=(m.notes||'').toString();
+  m.name=(m.name||'').toString();
+  m.isAdmin=m.isAdmin===true||m.isAdmin==='true'||m.isAdmin===1;
+  if(!Array.isArray(m.children))m.children=[];
+  m.children=m.children.map(function(c){
+    return{name:(c.name||'').toString(),age:(c.age||'').toString(),
+      classGrade:(c.classGrade||'').toString(),stream:(c.stream||'').toString(),
+      subjects:(c.subjects||'').toString(),institution:(c.institution||'').toString(),
+      futurePlans:(c.futurePlans||'').toString(),status:(c.status||'').toString()};
+  });
+  return m;
+}
 function loadCache(){
   var saved=[];
   try{saved=JSON.parse(localStorage.getItem(VER)||'[]');}catch(e){}
-  members=saved;
+  members=saved.map(coerceMember);
   var photos=JSON.parse(localStorage.getItem('rbs_photos')||'{}');
   members.forEach(function(m){var k=m.name.toLowerCase();if(photos[k]){m.photo=photos[k].photo||'';m.banner=photos[k].banner||'';}});
 }
@@ -314,7 +365,7 @@ function gsPost(body){
 function loadFromSheet(){
   return gsGet({action:'read'}).then(function(res){
     if(res&&res.ok&&res.members&&res.members.length){
-      members=res.members;
+      members=res.members.map(coerceMember);
       // Restore per-device photos (not stored in Sheet)
       var photos=JSON.parse(localStorage.getItem('rbs_photos')||'{}');
       members.forEach(function(m){var k=m.name.toLowerCase();if(photos[k]){m.photo=photos[k].photo||'';m.banner=photos[k].banner||'';}});
@@ -432,20 +483,21 @@ function canEdit(name){return SES.isAdmin||(SES.uid===name);}
 // ── MAIN TAB SWITCHING ────────────────────────────────────
 function switchMain(tab){
   activeMain=tab;
-  var myBtn=document.getElementById('tab-mine');
-  var allBtn=document.getElementById('tab-all');
-  if(myBtn)myBtn.classList.toggle('on',tab==='mine');
-  if(allBtn)allBtn.classList.toggle('on',tab==='all');
-  var myPane=document.getElementById('pane-mine');
-  var allPane=document.getElementById('pane-all');
+  ['mine','all','kids'].forEach(function(t){
+    var b=document.getElementById('tab-'+t);
+    if(b)b.classList.toggle('on',t===tab);
+    var p=document.getElementById('pane-'+t);
+    if(p)p.style.display='none';
+  });
   if(tab==='mine'){
-    if(myPane)myPane.style.display='block';
-    if(allPane)allPane.style.display='none';
+    document.getElementById('pane-mine').style.display='block';
     renderMyProfile();
-  } else {
-    if(myPane)myPane.style.display='none';
-    if(allPane)allPane.style.display='block';
+  } else if(tab==='all'){
+    document.getElementById('pane-all').style.display='flex';
     renderList();
+  } else if(tab==='kids'){
+    document.getElementById('pane-kids').style.display='flex';
+    renderKids();
   }
 }
 
@@ -885,6 +937,136 @@ function doExport(){
 // ── UTILS ─────────────────────────────────────────────────
 function cM(id){document.getElementById(id).classList.remove('open');if(id==='e-modal')document.getElementById('del-msg').className='cmsg';}
 ['e-modal','chart-modal','admin-modal'].forEach(function(id){document.getElementById(id).addEventListener('click',function(e){if(e.target===this)cM(id);});});
+
+// ═══════════════════════════════════════
+// KIDS DASHBOARD
+// ═══════════════════════════════════════
+var kSortBy='name', kFilterStream='all', kSearchTxt='';
+var STREAM_COLS={
+  'Medical / Life Sciences':'#a32d2d','Computer Science / IT':'#1d4ed8',
+  'Engineering':'#8b2fc9','Law':'#c2440e','Business / Commerce':'#c8973a',
+  'Arts & Design':'#be185d','School':'#1a6b3a','Aviation':'#0e7490',
+  'Hotel Management':'#374151','Public Policy':'#6d28d9','Other':'#7a7a9a','Not Specified':'#7a7a9a'
+};
+
+function catKid(s,f){
+  var t=((s||'')+' '+(f||'')).toLowerCase();
+  if(/mbbs|neet|medical|medicine|doctor|usmle|biotech/.test(t))return'Medical / Life Sciences';
+  if(/cse|computer|software/.test(t))return'Computer Science / IT';
+  if(/law|llb|nlu|clat|legal/.test(t))return'Law';
+  if(/engineering|jee|pcm|btech|aerospace|electronics/.test(t))return'Engineering';
+  if(/economics|commerce|bba|mba|business|finance/.test(t))return'Business / Commerce';
+  if(/arts|design|bfa|ux|ui|humanities/.test(t))return'Arts & Design';
+  if(/pilot|aviation/.test(t))return'Aviation';
+  if(/hotel|hospitality/.test(t))return'Hotel Management';
+  if(/policy/.test(t))return'Public Policy';
+  if(/school|[0-9]th|grade/.test(t))return'School';
+  if(t.trim().length<2)return'Not Specified';return'Other';
+}
+
+function getAllKids(){
+  var all=[];
+  members.forEach(function(m){
+    (m.children||[]).forEach(function(c){
+      if(!c.name&&!c.classGrade&&!c.stream&&!c.institution)return;
+      all.push(Object.assign({},c,{parent:m.name,parentUid:m.name,category:catKid(c.stream,c.futurePlans)}));
+    });
+  });
+  return all;
+}
+
+function renderKids(){
+  var all=getAllKids();
+  // Build stream pills
+  var streams={};
+  all.forEach(function(k){streams[k.category]=(streams[k.category]||0)+1;});
+  var sorted=Object.keys(streams).sort(function(a,b){return streams[b]-streams[a];});
+  var pillsEl=document.getElementById('k-pills');
+  if(pillsEl){
+    pillsEl.innerHTML='<button class="kpill'+(kFilterStream==='all'?' on':'')+'" onclick="kSetStream(\'all\')">All ('+all.length+')</button>'
+      +sorted.map(function(s){return'<button class="kpill'+(kFilterStream===s?' on':'')+'" onclick="kSetStream(\''+s.replace(/'/g,"\\'")+'\')" style="'+(kFilterStream===s?'':'')+'">'+s+' ('+streams[s]+')</button>';}).join('');
+  }
+  kDraw(all);
+}
+
+function kSetStream(s){kFilterStream=s;renderKids();}
+function kFilter(){kSearchTxt=(document.getElementById('k-srch')||{}).value||'';renderKids();}
+function kSort(s){
+  kSortBy=s;
+  ['name','age','parent'].forEach(function(k){
+    var b=document.getElementById('ks-'+k);
+    if(!b)return;
+    if(k===s){b.style.background='var(--M)';b.style.color='#fff';b.style.borderColor='var(--M)';}
+    else{b.style.background='var(--BG)';b.style.color='var(--B3)';b.style.borderColor='var(--BD2)';}
+  });
+  renderKids();
+}
+
+function kDraw(all){
+  var txt=kSearchTxt.toLowerCase();
+  var filtered=all.filter(function(k){
+    if(kFilterStream!=='all'&&k.category!==kFilterStream)return false;
+    if(!txt)return true;
+    return(k.name||'').toLowerCase().includes(txt)
+      ||(k.institution||'').toLowerCase().includes(txt)
+      ||(k.stream||'').toLowerCase().includes(txt)
+      ||(k.parent||'').toLowerCase().includes(txt)
+      ||(k.futurePlans||'').toLowerCase().includes(txt);
+  });
+  // Sort
+  filtered.sort(function(a,b){
+    if(kSortBy==='age'){var na=parseInt(a.age)||0,nb=parseInt(b.age)||0;return nb-na;}
+    if(kSortBy==='parent')return(a.parent||'').localeCompare(b.parent||'');
+    return(a.name||'').localeCompare(b.name||'');
+  });
+  var cnt=document.getElementById('k-count');
+  if(cnt)cnt.textContent=filtered.length+' kid'+(filtered.length!==1?'s':'');
+  var grid=document.getElementById('k-grid');
+  if(!grid)return;
+  if(!filtered.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="ei">&#x1F50D;</div><h3>No matches</h3></div>';return;}
+  grid.innerHTML=filtered.map(function(k,i){
+    var col=STREAM_COLS[k.category]||'#7a7a9a';
+    var bg=col+'18';
+    var ini2=(k.name||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase()||'?';
+    return'<div class="kd-card" style="border-top-color:'+col+'" onclick="showKid('+i+')">'
+      +'<div class="kd-av" style="background:'+bg+';color:'+col+'">'+ini2+'</div>'
+      +'<div class="kd-name">'+(k.name||'—')+'</div>'
+      +'<div class="kd-parent">&#x1F464; '+(k.parent||'—')+'</div>'
+      +'<span class="kd-badge" style="background:'+bg+';color:'+col+'">'+(k.category==='Not Specified'?'—':k.category)+'</span>'
+      +'<div class="kd-row"><span>Grade</span><span>'+(k.classGrade||'—')+'</span></div>'
+      +'<div class="kd-row"><span>Institution</span><span>'+(k.institution||'—')+'</span></div>'
+      +'</div>';
+  }).join('');
+  // Store filtered for modal lookup
+  window._kFiltered=filtered;
+}
+
+function showKid(i){
+  var all=window._kFiltered||[];
+  var k=all[i];if(!k)return;
+  var col=STREAM_COLS[k.category]||'#7a7a9a';
+  var bg=col+'18';
+  var ini2=(k.name||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
+  document.getElementById('kid-ttl').textContent=k.name||'Child Details';
+  document.getElementById('kid-body').innerHTML=
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+    +'<div style="width:52px;height:52px;border-radius:50%;background:'+bg+';color:'+col+';display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0">'+ini2+'</div>'
+    +'<div><div style="font-size:17px;font-weight:700;color:var(--B)">'+(k.name||'—')+'</div>'
+    +'<div style="font-size:12px;color:var(--B3);margin-top:2px">Parent: <strong style="color:var(--B2)">'+(k.parent||'—')+'</strong></div>'
+    +'<span style="display:inline-block;margin-top:5px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;background:'+bg+';color:'+col+'">'+(k.category)+'</span></div></div>'
+    +'<div style="display:flex;flex-direction:column;gap:0">'
+    +[{l:'Age',v:k.age},{l:'Class / Grade',v:k.classGrade},{l:'Stream / Field',v:k.stream},
+      {l:'Subjects',v:k.subjects},{l:'Institution',v:k.institution},
+      {l:'Future Plans',v:k.futurePlans},{l:'Notes',v:k.status}]
+    .filter(function(r){return r.v;})
+    .map(function(r){return'<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--BD);font-size:13px">'
+      +'<span style="color:var(--B3);min-width:100px;flex-shrink:0">'+r.l+'</span>'
+      +'<span style="color:var(--B);flex:1">'+eh(r.v)+'</span></div>';}).join('')
+    +'</div>'
+    +'<button onclick="cM(\'kid-modal\');switchMain(\'all\');selectM(\''+ea(k.parent)+'\');" class="btn btn-soft" style="width:100%;justify-content:center;margin-top:14px">View '+eh(k.parent)+'\'s Profile</button>';
+  document.getElementById('kid-modal').classList.add('open');
+}
+
 window.addEventListener('popstate',function(){if(document.getElementById('pview').classList.contains('open'))closePV();});
 boot();
 
