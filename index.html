@@ -331,10 +331,19 @@ function coerceMember(m){
   });
   return m;
 }
+function dedupe(arr){
+  var map={};
+  arr.forEach(function(m){
+    var k=m.name.toLowerCase();
+    if(!map[k]){map[k]=m;}
+    else{var ex=new Date(map[k].updatedAt||0),nm=new Date(m.updatedAt||0);if(nm>ex)map[k]=m;}
+  });
+  return Object.values(map);
+}
 function loadCache(){
   var saved=[];
   try{saved=JSON.parse(localStorage.getItem(VER)||'[]');}catch(e){}
-  members=saved.map(coerceMember);
+  members=dedupe(saved.map(coerceMember));
   var photos=JSON.parse(localStorage.getItem('rbs_photos')||'{}');
   members.forEach(function(m){var k=m.name.toLowerCase();if(photos[k]){m.photo=photos[k].photo||'';m.banner=photos[k].banner||'';}});
 }
@@ -365,7 +374,9 @@ function gsPost(body){
 function loadFromSheet(){
   return gsGet({action:'read'}).then(function(res){
     if(res&&res.ok&&res.members&&res.members.length){
-      members=res.members.map(coerceMember);
+      // Deduplicate by name — if Sheet has dupes, latest updatedAt wins
+      var raw=res.members.map(coerceMember);
+      members=dedupe(raw);
       // Restore per-device photos (not stored in Sheet)
       var photos=JSON.parse(localStorage.getItem('rbs_photos')||'{}');
       members.forEach(function(m){var k=m.name.toLowerCase();if(photos[k]){m.photo=photos[k].photo||'';m.banner=photos[k].banner||'';}});
