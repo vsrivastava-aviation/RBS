@@ -179,7 +179,7 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sa
   <button class="g-btn" onclick="doLogin()">Enter &rarr;</button>
   <div class="g-err" id="g-err"></div>
 </div>
-<div class="g-hint">Default PIN = your <strong style="color:var(--G2)">first name in lowercase</strong><br>e.g. "Vishal Srivastava" &rarr; <strong style="color:var(--G2)">vishal</strong><br>Admins get extra features automatically after login</div>
+<div class="g-hint">Default PIN = your <strong style="color:var(--G2)">first name in lowercase</strong><br>e.g. "Vishal Srivastava" &rarr; <strong style="color:var(--G2)">vishal</strong><br>Admins see extra features automatically after login</div>
 </div></div>
 <div id="app">
 <div class="hero">
@@ -310,13 +310,20 @@ function s2m(s){
 }
 
 // DATA
+function getDeleted(){try{return JSON.parse(localStorage.getItem('rbs_deleted')||'[]');}catch(e){return[];}}
+function addDeleted(name){var d=getDeleted();if(!d.includes(name.toLowerCase()))d.push(name.toLowerCase());localStorage.setItem('rbs_deleted',JSON.stringify(d));}
 function loadLocal(){
+  var deleted=getDeleted();
   var map={};
-  SEED.forEach(function(s){var m=s2m(s);map[m.name.toLowerCase()]=m;});
+  SEED.forEach(function(s){
+    var m=s2m(s);
+    if(!deleted.includes(m.name.toLowerCase()))map[m.name.toLowerCase()]=m;
+  });
   var saved=[];
   try{saved=JSON.parse(localStorage.getItem(VER)||'[]');}catch(e){}
   saved.forEach(function(m){
     var k=(m.name||'').toLowerCase();
+    if(deleted.includes(k))return;
     if(map[k]){map[k]=Object.assign({},map[k],m);}
     else{map[k]=m;}
   });
@@ -350,8 +357,10 @@ function gsPost(body){
 
 function mergeSheet(sm){
   if(!Array.isArray(sm))return;
+  var deleted=getDeleted();
   sm.forEach(function(s){
     var k=(s.name||'').toLowerCase();
+    if(deleted.includes(k))return;
     var lm=members.find(function(x){return x.name.toLowerCase()===k;});
     if(!lm){members.push(Object.assign(s2m({n:s.name,e:'',p:'',no:'',ch:[]}),s,{photo:'',banner:''}));}
     else{var sd=new Date(s.updatedAt||0),ld=new Date(lm.updatedAt||0);
@@ -772,12 +781,16 @@ function saveRec(){
 
 function confirmDel(){
   var name=editId;
+  addDeleted(name);
   members=members.filter(function(m){return m.name!==name;});
-  if(curId===name){curId=null;closePV();
+  if(curId===name){
+    curId=null;
+    document.getElementById('pview').classList.remove('open');
     var dc=document.getElementById('dcol');
     if(dc)dc.innerHTML='<div class="empty" style="padding:60px 20px"><div class="ei">&#x1F448;</div><h3>Select a member</h3></div>';
   }
   saveLocal();populateSel();renderList();calcStats();cM('e-modal');
+  if(activeMain==='mine')renderMyProfile();
   toast('Member deleted.','info');
   delFromSheet(name);
 }
